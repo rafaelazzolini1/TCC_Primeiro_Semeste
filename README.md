@@ -1,10 +1,10 @@
 Para executar o projeto:
 
 Front End
-  git clone https://github.com/rafaelazzolini1/TCC_Primeiro_Semeste/tree/main
-  cd client
-  npm install
-  npm start
+  - git clone https://github.com/rafaelazzolini1/TCC_Primeiro_Semeste/tree/main
+  - cd client
+  - npm install
+  - npm start
 
 
 Back End:
