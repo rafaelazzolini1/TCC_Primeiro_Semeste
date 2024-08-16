@@ -17,7 +17,7 @@
 
 # @app.route("/query_open_ai", methods = ['POST'])
 # def query_open_ai():
-#     llm = ChatOpenAI(temperature=0, model_name='gpt-3.5-turbo', openai_api_key='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')
+#     llm = ChatOpenAI(temperature=0, model_name='gpt-3.5-turbo', openai_api_key='')
 
 #     print(llm([HumanMessage(content='What is 2+2')]))
 
@@ -66,7 +66,7 @@ sql_db = SQLDatabase.from_uri(database_uri)
 
     #result = sql_db.run('SELECT TOP 10 * FROM ARTIST')
 
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0, openai_api_key = "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")
+llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0, openai_api_key = "")
 # agent_executor = create_sql_agent(llm, db=sql_db, agent_type="tool-calling", verbose=True)
 
 examples = [
