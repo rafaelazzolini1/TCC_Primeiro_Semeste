@@ -61,7 +61,7 @@ app = Flask(__name__)#, static_folder='../client/build', template_folder='../cli
 
 CORS(app)
 
-database_uri = "mssql+pyodbc://@DESKTOP-5CU5M7P/Teste_RAG?driver=ODBC+Driver+17+for+SQL+Server"
+database_uri = ""
 sql_db = SQLDatabase.from_uri(database_uri)
 
     #result = sql_db.run('SELECT TOP 10 * FROM ARTIST')
@@ -89,7 +89,7 @@ examples = [
 
 example_selector = SemanticSimilarityExampleSelector.from_examples(
     examples,
-    OpenAIEmbeddings(openai_api_key="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"),
+    OpenAIEmbeddings(openai_api_key=""),
     FAISS,
     k=5,
     input_keys=["input"],
