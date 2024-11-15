@@ -59,7 +59,7 @@ sql_db = SQLDatabase.from_uri(database_uri)
 
     #result = sql_db.run('SELECT TOP 10 * FROM ARTIST')
 
-llm = ChatOpenAI(model="", temperature=0 ## ======== Chave API Open AI ========= ## ===============================================================
+llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0## ======== Chave API Open AI ========= ## ===============================================================
 )
 
 # agent_executor = create_sql_agent(llm, db=sql_db, agent_type="tool-calling", verbose=True)
@@ -128,7 +128,6 @@ examples = [
 
 example_selector = SemanticSimilarityExampleSelector.from_examples(
     examples,
- ## ======== Chave API Open AI ========= ## ===============================================================
     FAISS,
     k=5,
     input_keys=["input"],
