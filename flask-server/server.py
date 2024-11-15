@@ -54,12 +54,12 @@ CORS(app)
 
 # ============ LibSodiumEnd ============ #
 
-database_uri = "" ## ======== Caminho SQL SERVER local ========= ##
+database_uri = ""  ## ======== Caminho SQL SERVER local ========= ## ===============================================================
 sql_db = SQLDatabase.from_uri(database_uri)
 
     #result = sql_db.run('SELECT TOP 10 * FROM ARTIST')
 
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0, openai_api_key = "" ## ======== Chave API Open AI ========= ## 
+llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0, openai_api_key = "" ## ======== Chave API Open AI ========= ## ===============================================================
 )
 
 # agent_executor = create_sql_agent(llm, db=sql_db, agent_type="tool-calling", verbose=True)
@@ -128,7 +128,7 @@ examples = [
 
 example_selector = SemanticSimilarityExampleSelector.from_examples(
     examples,
-    OpenAIEmbeddings(openai_api_key="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"),
+    OpenAIEmbeddings(openai_api_key=""), ## ======== Chave API Open AI ========= ## ===============================================================
     FAISS,
     k=5,
     input_keys=["input"],
