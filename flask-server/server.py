@@ -1,46 +1,17 @@
-# from flask import Flask, send_from_directory, render_template
-# from langchain.chat_models import ChatOpenAI
-# from langchain.schema import HumanMessage
-# from flask_sqlalchemy import SQLAlchemy
 
-# app = Flask(__name__, static_folder='../client/build/static', template_folder='../client/build')
-
-# db = SQLAlchemy()
-
-# class Data(db.Model): 
-#     id  = db.Column(db.Integer, primary_key = True)
-#     content = db.Column(db.String)
-
-# @app.route("/members")
-# def members():
-#     return {"members": ["member2", "member2", "member3"]}
-
-# @app.route("/query_open_ai", methods = ['POST'])
-# def query_open_ai():
-#     llm = ChatOpenAI(temperature=0, model_name='gpt-3.5-turbo', openai_api_key='')
-
-#     print(llm([HumanMessage(content='What is 2+2')]))
-
-#     return {
-#         'statusCode': 500,
-#         'body': 'TODO'
-#     }
-
-# if __name__ == "__main__":
-#     app.run(debug=True)
-
-
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response
 from flask_cors import CORS
-from langchain.chat_models import ChatOpenAI
+
+import nacl.secret
+import nacl.utils
+from nacl.encoding import Base64Encoder
+
+from langchain_community.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage
-
-# from flask_sqlalchemy import SQLAlchemy
-
-from langchain.agents import create_sql_agent
-from langchain.agents.agent_toolkits import SQLDatabaseToolkit
-from langchain.sql_database import SQLDatabase
-from langchain.llms.openai import OpenAI
+from langchain_community.agent_toolkits.sql.base import create_sql_agent
+from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
+from langchain_community.utilities import SQLDatabase
+from langchain_community.llms import OpenAI
 from langchain.agents import AgentExecutor
 from langchain.agents.agent_types import AgentType
 
@@ -57,17 +28,82 @@ from langchain_core.prompts import (
     SystemMessagePromptTemplate,
 )
 
+from langchain.agents import tool
+from langchain.agents.format_scratchpad.openai_tools import (
+    format_to_openai_tool_messages,
+)
+from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
+
+
 app = Flask(__name__)#, static_folder='../client/build', template_folder='../client/build'
 
 CORS(app)
 
-database_uri = ""
+# ============ LibSodiumStart ============ #
+
+# keyFront = Base64Encoder.decode(key_base64)
+# encrypted_message_base64 = '4+DkFy4IqOAO5elqm/zamFbfXLJVZc7Td0RfFgRhYw+q4/lDXFochLo6ZCQwgglBbq/63pUSPEaFruvJWU5VCiRFJBjJTOE=' #AQUI SERIA O TOKEN JÁ CRIPTOGRAFADO
+# encrypted_message = Base64Encoder.decode(encrypted_message_base64)
+
+# nonce = encrypted_message[:nacl.secret.SecretBox.NONCE_SIZE]
+# encrypted = encrypted_message[nacl.secret.SecretBox.NONCE_SIZE:]
+
+# box = nacl.secret.SecretBox(key)
+
+# decrypted_message = box.decrypt(encrypted, nonce)
+
+# ============ LibSodiumEnd ============ #
+
+database_uri = "" ## ======== Caminho SQL SERVER local ========= ##
 sql_db = SQLDatabase.from_uri(database_uri)
 
     #result = sql_db.run('SELECT TOP 10 * FROM ARTIST')
 
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0, openai_api_key = "")
+llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0, openai_api_key = "" ## ======== Chave API Open AI ========= ## 
+)
+
 # agent_executor = create_sql_agent(llm, db=sql_db, agent_type="tool-calling", verbose=True)
+
+@tool
+def separaPalavras(texto: str) -> dict:
+    """Returns a dict of words from a text string"""
+    texto = texto.replace(',', '')
+    split = texto.split()
+
+    return split
+
+tools = [separaPalavras]
+
+promptValid = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "Você é um agente inteligente cuja função é interpretar se uma informação é bloqueada ou permitida.\
+             Você deve verificar se a frase contida em input se relaciona de alguma forma com temas que envolvam salário, pagamentos, dinheiro, raça, religião, orientação sexual\
+            Se considerar que existe alguma relação, retorne a palavra 'Bloqueado'\
+            Caso contrário apenas retorne a palavra 'Permitido'\
+            ",
+        ),
+        ("user", "{input}"),
+        MessagesPlaceholder(variable_name="agent_scratchpad"),
+    ]
+)
+
+llm_with_tools = llm.bind_tools(tools)
+
+agentValid = (
+    {
+        "input": lambda x: x["input"],
+        "agent_scratchpad": lambda x: format_to_openai_tool_messages(
+            x["intermediate_steps"]
+        ),
+    }
+    | promptValid
+    | llm_with_tools
+    | OpenAIToolsAgentOutputParser()
+)
+
+agent_executor = AgentExecutor(agent=agentValid, tools=tools, verbose=True)
 
 examples = [
     {"input": "Quanto é o saldo de salário do Usuário1?",
@@ -84,12 +120,15 @@ examples = [
     },
     {"input": "Qual o valor da folha de pagamento total da empresa?",
      "query": "select sum(Salario) as FolhaPagamento from Funcionario Where DataDemissao is Null"
+    },
+    {"input": "Qual a politica de ferias da empresa?",
+     "query": "select PoliticaDescricao as Politica from Politicas Where PoliticaNome like '%Ferias%'" 
     }
 ]
 
 example_selector = SemanticSimilarityExampleSelector.from_examples(
     examples,
-    OpenAIEmbeddings(openai_api_key=""),
+    OpenAIEmbeddings(openai_api_key="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"),
     FAISS,
     k=5,
     input_keys=["input"],
@@ -136,48 +175,72 @@ agent = create_sql_agent(
     agent_type="tool-calling",
 )
 
-# db = SQLAlchemy()
-
-# class Data(db.Model): 
-#     id = db.Column(db.Integer, primary_key=True)
-#     content = db.Column(db.String)
-
 @app.route("/members")
 def members():
     return {"members": ["member1", "member2", "member3"]}
 
+@app.route("/cryptokey")
+def retornaChave():
+    chave = {'chave': 'q9egeDk+L1t2C8pgH/9rzE/ezPflr3cx6JLujZSiaX8='}
+    return jsonify({'chave': chave})
+
+@app.after_request
+def remove_server_header(response):
+    response.headers.pop('Server', None)  # Remove o cabeçalho Server
+    return response
+
+
+
 @app.route('/api/dados', methods=['POST'])
 def receber_dados():
-    dados = request.json  # Obtém os dados JSON enviados pelo React
-    print(dados)  # Processa os dados conforme necessário
+    dados = request.json
+    print(dados)
+
     nome = dados.get('nome')
     print(nome)
 
-    result = agent.invoke({
-    "input": nome}
+    token = dados.get('token')
+    print(token)
+
+    keyFront = Base64Encoder.decode('q9egeDk+L1t2C8pgH/9rzE/ezPflr3cx6JLujZSiaX8=')
+    encrypted_message_base64 = token
+    encrypted_message = Base64Encoder.decode(encrypted_message_base64)
+
+    nonce = encrypted_message[:nacl.secret.SecretBox.NONCE_SIZE]
+    encrypted = encrypted_message[nacl.secret.SecretBox.NONCE_SIZE:]
+
+    box = nacl.secret.SecretBox(keyFront)
+
+    decrypted_message = box.decrypt(encrypted, nonce)
+
+
+
+    if decrypted_message.decode() == 'funcionario':
+        resultadoValidacao = agent_executor.invoke({"input": nome})
+        validacao = resultadoValidacao['output']
+
+        if validacao == 'Bloqueado':
+            result = {'output': 'Não posso fornecer essa informação.'}
+
+        else:
+            result = agent.invoke({"input": nome})
+
+    else:
+        result = agent.invoke({"input": nome}
+                              
 )
+    print(result)
+    response = make_response(jsonify({'result': result}))
+    response.headers['Content-Type'] = 'application/json'
+    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self'; style-src 'self'; frame-ancestors 'none';"
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    return response
 
-    return jsonify({'result': result})
-
-# @app.route("/query_open_ai", methods=['POST'])
-# def query_open_ai():
-#     llm = ChatOpenAI(temperature=0, model_name='gpt-3.5-turbo', openai_api_key='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')
-
-#     print(llm([HumanMessage(content='What is 2+2')]))
-
-#     return {
-#         'statusCode': 500,
-#         'body': 'TODO'
-#     }
-
-# @app.route('/')
-# def index():
-#     return render_template('index.html')
-
-# @app.route('/<path:path>')
-# def serve_static(path):
-#     return send_from_directory(app.static_folder, path)
+    #return jsonify({'result': result})
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+    
 
