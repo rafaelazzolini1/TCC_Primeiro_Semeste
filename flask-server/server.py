@@ -161,7 +161,7 @@ def receber_dados():
 
 # @app.route("/query_open_ai", methods=['POST'])
 # def query_open_ai():
-#     llm = ChatOpenAI(temperature=0, model_name='gpt-3.5-turbo', openai_api_key='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')
+#     llm = ChatOpenAI(temperature=0, model_name='gpt-3.5-turbo', openai_api_key='')
 
 #     print(llm([HumanMessage(content='What is 2+2')]))
 
