@@ -10,7 +10,8 @@ import {
   ArrowDown01Icon,
   ArrowUp10Icon
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+
+import { useNavigate, useLocation } from 'react-router-dom';
 import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { auth, db } from './Services/FirebaseConfig.js';
 import { signOut } from 'firebase/auth';
@@ -134,9 +135,27 @@ export default function AdminDashboard() {
     }
   };
 
+  const location = useLocation();
+  const email = location.state?.email;
+  const [userEmail, setUserEmail] = useState('');
+  const [token, setToken] = useState("");
+
+  useEffect(() => {
+    const emailFromState = location.state?.email;
+    const tokenCryptFromState = location.state?.tokenCrypt;
+    
+    const params = new URLSearchParams(location.search);
+    const emailFromParams = params.get('email');
+  
+    setUserEmail(emailFromState || emailFromParams || '');
+    setToken(tokenCryptFromState || '');
+
+    console.log("Token recebido:", token);
+  }, [location]);
+
   const handleChangeChat = async () => {
     try {
-      navigate('/front-chat');
+      navigate('/front-chat', { state: { email: userEmail, tokenCrypt: token } });
     } catch (error) {
       console.error("Erro ao acessar o chat:", error);
     }
@@ -154,7 +173,7 @@ export default function AdminDashboard() {
                   name="searchTerm"
                   id="searchTerm"
                   className="w-full sm:w-64 px-4 py-2 bg-[#f0f0f0] text-[#2c3e50] rounded-md pl-10"
-                  placeholder="Buscar"
+                  placeholder="Buscar nome ou email"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -284,8 +303,8 @@ export default function AdminDashboard() {
             ))}
           </ul>
         </nav>
-        <div className="p-4">
-          <button onClick={handleLogout} className="flex items-center space-x-2 text-gray-300 hover:text-red-600 ">
+        <div className="p-6 mt-auto pt-8 border-gray-700">
+          <button onClick={handleLogout} className="flex items-center space-x-2 text-red-500 hover:text-red-600 ">
             <LogOutIcon className="h-5 w-5" />
             <span>Logout</span>
           </button>

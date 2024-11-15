@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Menu, PenSquare, ChevronUp, LogOut, User } from 'lucide-react';
+import { Menu, PenSquare, ChevronUp, LogOut, User, LogOutIcon} from 'lucide-react';
 
 import { useNavigate, useLocation } from 'react-router-dom';
 import { auth, db } from './Services/FirebaseConfig.js';
@@ -139,7 +139,6 @@ export default function ChatInterface() {
     setUserEmail(emailFromState || emailFromParams || '');
     setToken(tokenCryptFromState || '');
 
-    console.log("Token recebido:", token);
   }, [location]);
 
 
@@ -165,9 +164,11 @@ export default function ChatInterface() {
             </button>
           ))}
         </div>
-        <div className="mt-auto pt-6 border-t border-gray-700">
-          <button onClick={handleLogout} className="flex items-center p-4 gap-2 text-red-400 hover:text-red-300">
-            <LogOut size={16} /> Log out
+
+        <div className="p-6 mt-auto pt-8 border-t border-gray-700">
+          <button onClick={handleLogout} className="flex items-center space-x-2 text-red-500 hover:text-red-600 ">
+            <LogOutIcon className="h-5 w-5" />
+            <span>Logout</span>
           </button>
         </div>
       </aside>

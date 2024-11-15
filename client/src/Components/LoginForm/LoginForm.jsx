@@ -96,7 +96,7 @@ export default function LoginForm() {
           sessionStorage.setItem('userPosition', userPosition);
 
           if (userDoc.exists()) {
-            if (userPosition === "Main-admin") {
+            if (userPosition === "Main-admin" || userPosition === "Gestor") {
               navigate('/admin-dashboard', { state: { email: formData.email, tokenCrypt: tokenCrypt } });
               console.log(tokenCrypt);
             } else {

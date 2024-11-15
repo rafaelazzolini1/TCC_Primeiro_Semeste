@@ -63,7 +63,7 @@ const ProtectedRoute = ({ children, adminRequired }) => {
     return <Navigate to="/LoginForm" />;
   }
 
-  if (adminRequired && userPosition !== 'Main-admin') {
+  if (adminRequired && userPosition !== 'Main-admin' && userPosition !== 'Gestor') {
     return <Navigate to="/unauthorized" />;
   }
 
