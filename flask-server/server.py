@@ -128,7 +128,7 @@ examples = [
 
 example_selector = SemanticSimilarityExampleSelector.from_examples(
     examples,
-    OpenAIEmbeddings(openai_api_key=""), ## ======== Chave API Open AI ========= ## ===============================================================
+ ## ======== Chave API Open AI ========= ## ===============================================================
     FAISS,
     k=5,
     input_keys=["input"],
